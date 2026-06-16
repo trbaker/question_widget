@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>Question Builder</title>
 <style>
   :root{
@@ -136,16 +137,47 @@ function decode(str){
 }
 function esc(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+// A decoded payload is only usable if it has a question and a usable array of answers.
+function isValidQuestion(d){
+  return d && typeof d === 'object'
+    && typeof d.q === 'string' && d.q.trim().length
+    && Array.isArray(d.o)
+    && d.o.some(t => typeof t === 'string' && t.trim().length);
+}
+
 const app = document.getElementById('app');
 const params = new URLSearchParams(location.search);
-const data = params.has('d') ? decode(params.get('d')) : null;
 
-if (data && data.o) { renderStudent(data); }
-else { renderTeacher(); }
+if (params.has('d')) {
+  const data = decode(params.get('d'));
+  if (isValidQuestion(data)) {
+    try { renderStudent(data); }
+    catch(e){ renderBadLink(); }
+  } else {
+    renderBadLink();
+  }
+} else {
+  renderTeacher();
+}
+
+function renderBadLink(){
+  app.innerHTML = `
+  <div class="card">
+    <p class="q-stem">This question link doesn’t look right</p>
+    <p class="q-instruct" style="margin-bottom:0">The link may be incomplete or was changed after it was created. Ask whoever shared it for a fresh link, or build your own.</p>
+    <div class="row" style="margin-top:16px">
+      <a class="btn btn-ghost" href="https://trbaker.github.io/question_widget/" style="text-decoration:none">Create a question</a>
+    </div>
+  </div>`;
+}
 
 /* ===================== STUDENT MODE ===================== */
 function renderStudent(d){
-  const opts = d.o.map((text,i)=>({text, fb:(d.f&&d.f[i])||'', correct:!!(d.c&&d.c[i])}))
+  const opts = d.o.map((text,i)=>({
+                    text: typeof text === 'string' ? text : '',
+                    fb: (d.f && typeof d.f[i] === 'string') ? d.f[i] : '',
+                    correct: !!(d.c && d.c[i])
+                  }))
                   .filter(o=>o.text && o.text.trim().length);
   const multi = opts.filter(o=>o.correct).length > 1;
   const inputType = multi ? 'checkbox' : 'radio';
