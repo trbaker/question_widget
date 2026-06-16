@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Question Builder</title>
+<style>
+  :root{
+    --ink:#23282e;
+    --ink-soft:#5b6570;
+    --line:#d7dde3;
+    --paper:#fbfaf7;
+    --card:#ffffff;
+    --accent:#1d6f7a;
+    --accent-press:#155059;
+    --correct:#1f7a4d;
+    --correct-bg:#e7f4ec;
+    --wrong:#b23b3b;
+    --wrong-bg:#fbeceb;
+    --miss-bg:#eef6f2;
+    --radius:12px;
+    --pad:18px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding:24px 16px 64px;
+  }
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:1.45rem;margin:0 0 4px;letter-spacing:-.01em}
+  .lede{color:var(--ink-soft);margin:0 0 24px;font-size:.95rem}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:var(--pad);
+    margin-bottom:16px;
+  }
+  label{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px}
+  .hint{font-weight:400;color:var(--ink-soft);font-size:.82rem}
+  textarea,input[type=text]{
+    width:100%;font:inherit;color:inherit;
+    border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px;background:#fff;resize:vertical;
+  }
+  textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  textarea{min-height:54px}
+  .opt{
+    border:1px solid var(--line);border-radius:10px;
+    padding:14px;margin-bottom:12px;background:#fff;
+  }
+  .opt-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .opt-head .tag{
+    font-weight:700;font-size:.78rem;color:var(--ink-soft);
+    background:#eef1f4;border-radius:6px;padding:3px 9px;flex:none;
+  }
+  .correct-toggle{
+    display:flex;align-items:center;gap:8px;font-weight:600;
+    font-size:.85rem;cursor:pointer;margin-left:auto;color:var(--ink-soft);
+    user-select:none;
+  }
+  .correct-toggle input{width:20px;height:20px;accent-color:var(--correct);cursor:pointer}
+  .opt textarea{min-height:42px;margin-top:8px}
+  .fb-label{font-weight:500;font-size:.82rem;color:var(--ink-soft);margin:10px 0 0}
+  button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid transparent}
+  .btn{
+    background:var(--accent);color:#fff;font-weight:600;
+    padding:12px 20px;font-size:1rem;
+  }
+  .btn:hover{background:var(--accent-press)}
+  .btn:active{transform:translateY(1px)}
+  .btn-ghost{background:#fff;color:var(--accent);border-color:var(--line)}
+  .btn-ghost:hover{border-color:var(--accent)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .msg{
+    border-radius:8px;padding:10px 12px;font-size:.9rem;margin-top:12px;
+    background:var(--wrong-bg);color:var(--wrong);border:1px solid #f0cdcb;
+  }
+  .share-out{margin-top:14px}
+  .share-out textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;background:#f7f8f9}
+  .share-out label{margin-top:14px}
+  .copied{color:var(--correct);font-size:.82rem;font-weight:600;margin-left:8px}
+
+  /* student view */
+  .q-stem{font-size:1.2rem;font-weight:600;margin:0 0 4px;line-height:1.35}
+  .q-instruct{color:var(--ink-soft);font-size:.85rem;margin:0 0 18px}
+  .choice{
+    display:flex;gap:12px;align-items:flex-start;
+    border:1.5px solid var(--line);border-radius:10px;
+    padding:14px;margin-bottom:10px;cursor:pointer;background:#fff;
+    transition:border-color .12s;
+  }
+  .choice:hover{border-color:var(--accent)}
+  .choice input{margin-top:3px;width:20px;height:20px;flex:none;accent-color:var(--accent);cursor:pointer}
+  .choice .ctext{flex:1}
+  .choice.locked{cursor:default}
+  .choice.locked:hover{border-color:var(--line)}
+  .choice.locked input{pointer-events:none}
+  .choice.is-correct{border-color:var(--correct);background:var(--correct-bg)}
+  .choice.is-wrong{border-color:var(--wrong);background:var(--wrong-bg)}
+  .choice.is-missed{border-color:var(--correct);background:var(--miss-bg);border-style:dashed}
+  .verdict{font-weight:700;font-size:.82rem;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .verdict.c{color:var(--correct)}
+  .verdict.w{color:var(--wrong)}
+  .fb{font-size:.9rem;color:var(--ink);margin-top:2px}
+  .result{
+    border-radius:10px;padding:14px 16px;margin:4px 0 16px;font-weight:600;
+  }
+  .result.win{background:var(--correct-bg);color:var(--correct);border:1px solid #bfe3cd}
+  .result.review{background:#fff6e8;color:#92611a;border:1px solid #f0dcb4}
+  footer{color:var(--ink-soft);font-size:.78rem;text-align:center;margin-top:28px}
+  a{color:var(--accent)}
+  @media (max-width:480px){ body{padding:16px 12px 48px} h1{font-size:1.3rem} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<footer>Formative check — answers are scored in your browser. Nothing is submitted or stored anywhere.</footer>
+
+<script>
+/* ---------- encode / decode (URL-safe, Unicode-safe) ---------- */
+function encode(obj){
+  const json = JSON.stringify(obj);
+  return btoa(encodeURIComponent(json)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decode(str){
+  try{
+    const b = str.replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(atob(b)));
+  }catch(e){ return null; }
+}
+function esc(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+const app = document.getElementById('app');
+const params = new URLSearchParams(location.search);
+const data = params.has('d') ? decode(params.get('d')) : null;
+
+if (data && data.o) { renderStudent(data); }
+else { renderTeacher(); }
+
+/* ===================== STUDENT MODE ===================== */
+function renderStudent(d){
+  const opts = d.o.map((text,i)=>({text, fb:(d.f&&d.f[i])||'', correct:!!(d.c&&d.c[i])}))
+                  .filter(o=>o.text && o.text.trim().length);
+  const multi = opts.filter(o=>o.correct).length > 1;
+  const inputType = multi ? 'checkbox' : 'radio';
+
+  let html = '<div class="card">';
+  html += `<p class="q-stem">${esc(d.q)}</p>`;
+  html += `<p class="q-instruct">${multi ? 'Select all that apply.' : 'Choose one answer.'}</p>`;
+  html += '<div id="choices">';
+  opts.forEach((o,i)=>{
+    html += `<label class="choice" data-i="${i}">
+      <input type="${inputType}" name="ans" value="${i}">
+      <span class="ctext">${esc(o.text)}</span>
+    </label>`;
+  });
+  html += '</div>';
+  html += '<div id="result"></div>';
+  html += '<div class="row"><button class="btn" id="check">Check answer</button>'
+        + '<button class="btn-ghost btn" id="retry" style="display:none">Try again</button></div>';
+  html += '</div>';
+  app.innerHTML = html;
+
+  const choicesEl = document.getElementById('choices');
+  const resultEl  = document.getElementById('result');
+  const checkBtn  = document.getElementById('check');
+  const retryBtn  = document.getElementById('retry');
+
+  checkBtn.addEventListener('click', ()=>{
+    const picked = [...choicesEl.querySelectorAll('input:checked')].map(el=>+el.value);
+    if (!picked.length){
+      resultEl.innerHTML = '<div class="result review">Pick an answer first, then check.</div>';
+      return;
+    }
+    const correctIdx = opts.map((o,i)=>o.correct?i:-1).filter(i=>i>=0);
+    const allCorrectPicked = correctIdx.every(i=>picked.includes(i));
+    const noWrongPicked = picked.every(i=>opts[i].correct);
+    const win = allCorrectPicked && noWrongPicked;
+
+    choicesEl.querySelectorAll('.choice').forEach(label=>{
+      const i = +label.dataset.i;
+      const o = opts[i];
+      const sel = picked.includes(i);
+      label.classList.add('locked');
+      label.querySelector('input').disabled = true;
+
+      // status styling
+      if (sel && o.correct)       label.classList.add('is-correct');
+      else if (sel && !o.correct) label.classList.add('is-wrong');
+      else if (!sel && o.correct) label.classList.add('is-missed');
+
+      // verdict + feedback
+      let verdict = '';
+      if (sel && o.correct)        verdict = '<div class="verdict c">✓ Correct</div>';
+      else if (sel && !o.correct)  verdict = '<div class="verdict w">✗ Not the best choice</div>';
+      else if (!sel && o.correct)  verdict = '<div class="verdict c">★ A correct answer you didn’t pick</div>';
+      const fb = o.fb ? `<div class="fb">${esc(o.fb)}</div>` : '';
+      if (verdict || fb){
+        const box = document.createElement('div');
+        box.innerHTML = verdict + fb;
+        label.querySelector('.ctext').appendChild(box);
+      }
+    });
+
+    resultEl.innerHTML = win
+      ? '<div class="result win">Nice — that’s right! Read the notes below if you’d like.</div>'
+      : '<div class="result review">Not quite yet. Look at the feedback under each choice and try again.</div>';
+
+    checkBtn.style.display = 'none';
+    retryBtn.style.display = '';
+  });
+
+  retryBtn.addEventListener('click', ()=> renderStudent(d));
+}
+
+/* ===================== TEACHER MODE ===================== */
+function renderTeacher(){
+  let html = `
+  <h1>Question builder</h1>
+  <p class="lede">Write a question, fill in up to four answers, mark which are correct, and add feedback for each. Then create a link to share or embed. Students get instant feedback — nothing is sent anywhere.</p>
+
+  <div class="card">
+    <label for="q">Question <span class="hint">— what students will read</span></label>
+    <textarea id="q" placeholder="e.g. Which of these are mammals?"></textarea>
+  </div>`;
+
+  for (let i=0;i<4;i++){
+    html += `
+    <div class="opt">
+      <div class="opt-head">
+        <span class="tag">Answer ${i+1}</span>
+        <label class="correct-toggle"><input type="checkbox" class="c" data-i="${i}"> Mark correct</label>
+      </div>
+      <input type="text" class="o" data-i="${i}" placeholder="${i<2?'Answer text':'Answer text (optional)'}">
+      <p class="fb-label">Feedback shown after checking</p>
+      <textarea class="f" data-i="${i}" placeholder="e.g. Yes — whales feed milk to their young."></textarea>
+    </div>`;
+  }
+
+  html += `
+  <div class="card">
+    <div class="row">
+      <button class="btn" id="make">Create share link</button>
+      <button class="btn btn-ghost" id="preview">Preview as student</button>
+    </div>
+    <div id="err"></div>
+    <div id="out"></div>
+  </div>`;
+
+  app.innerHTML = html;
+
+  function gather(){
+    const q = document.getElementById('q').value.trim();
+    const o = [...document.querySelectorAll('.o')].map(el=>el.value.trim());
+    const f = [...document.querySelectorAll('.f')].map(el=>el.value.trim());
+    const c = [...document.querySelectorAll('.c')].map(el=>el.checked);
+    return {q,o,f,c};
+  }
+  function validate(d){
+    if (!d.q) return 'Add a question first.';
+    const filled = d.o.map((t,i)=>({t,i})).filter(x=>x.t);
+    if (filled.length < 2) return 'Add at least two answer choices.';
+    const hasCorrect = filled.some(x=>d.c[x.i]);
+    if (!hasCorrect) return 'Mark at least one answer as correct.';
+    return null;
+  }
+
+  document.getElementById('err');
+  const out = document.getElementById('out');
+  const err = document.getElementById('err');
+
+  document.getElementById('preview').addEventListener('click', ()=>{
+    const d = gather();
+    const problem = validate(d);
+    err.innerHTML = problem ? `<div class="msg">${esc(problem)}</div>` : '';
+    if (problem) return;
+    // open the student view using a hash so we can return
+    const url = location.origin + location.pathname + '?d=' + encode(d);
+    window.open(url, '_blank');
+  });
+
+  document.getElementById('make').addEventListener('click', ()=>{
+    const d = gather();
+    const problem = validate(d);
+    err.innerHTML = problem ? `<div class="msg">${esc(problem)}</div>` : '';
+    out.innerHTML = '';
+    if (problem) return;
+
+    const url = location.origin + location.pathname + '?d=' + encode(d);
+    const iframe = `<iframe src="${url}" width="100%" height="520" style="border:1px solid #ccc;border-radius:8px"></iframe>`;
+
+    out.innerHTML = `
+      <div class="share-out">
+        <label>Share link <span class="hint">— paste into your LMS, send to students, or open directly</span></label>
+        <textarea id="lnk" rows="3" readonly>${esc(url)}</textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn btn-ghost" id="cpLink">Copy link</button>
+          <a class="btn btn-ghost" href="${url}" target="_blank" style="text-decoration:none">Open it</a>
+          <span class="copied" id="cp1" style="display:none">Copied!</span>
+        </div>
+
+        <label>Embed code <span class="hint">— for platforms that accept HTML / iframes</span></label>
+        <textarea id="emb" rows="3" readonly>${esc(iframe)}</textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn btn-ghost" id="cpEmb">Copy embed code</button>
+          <span class="copied" id="cp2" style="display:none">Copied!</span>
+        </div>
+      </div>`;
+
+    const copy=(area,flag)=>{ area.select(); document.execCommand('copy');
+      flag.style.display=''; setTimeout(()=>flag.style.display='none',1600); };
+    document.getElementById('cpLink').addEventListener('click',()=>copy(document.getElementById('lnk'),document.getElementById('cp1')));
+    document.getElementById('cpEmb').addEventListener('click',()=>copy(document.getElementById('emb'),document.getElementById('cp2')));
+  });
+}
+</script>
+</body>
+</html>
