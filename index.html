@@ -190,22 +190,17 @@ function renderStudent(d){
       label.classList.add('locked');
       label.querySelector('input').disabled = true;
 
-      // status styling
-      if (sel && o.correct)       label.classList.add('is-correct');
-      else if (sel && !o.correct) label.classList.add('is-wrong');
-      else if (!sel && o.correct) label.classList.add('is-missed');
+      // Only the options the student selected reveal feedback.
+      if (!sel) return;
 
-      // verdict + feedback
-      let verdict = '';
-      if (sel && o.correct)        verdict = '<div class="verdict c">✓ Correct</div>';
-      else if (sel && !o.correct)  verdict = '<div class="verdict w">✗ Not the best choice</div>';
-      else if (!sel && o.correct)  verdict = '<div class="verdict c">★ A correct answer you didn’t pick</div>';
+      label.classList.add(o.correct ? 'is-correct' : 'is-wrong');
+      const verdict = o.correct
+        ? '<div class="verdict c">✓ Correct</div>'
+        : '<div class="verdict w">✗ Not the best choice</div>';
       const fb = o.fb ? `<div class="fb">${esc(o.fb)}</div>` : '';
-      if (verdict || fb){
-        const box = document.createElement('div');
-        box.innerHTML = verdict + fb;
-        label.querySelector('.ctext').appendChild(box);
-      }
+      const box = document.createElement('div');
+      box.innerHTML = verdict + fb;
+      label.querySelector('.ctext').appendChild(box);
     });
 
     resultEl.innerHTML = win
